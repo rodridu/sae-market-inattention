@@ -1,0 +1,30 @@
+\begin{table}[htbp]
+\centering
+\caption{Top 15 SAE Features Predicting 30-Day Drift}
+\label{tab:features}
+\begin{tabular}{lllrrrrl}
+\hline\hline
+Feature & Type & Coefficient & Std Error & t-stat & p-value & \\
+\hline
+n4486 & Mean & -0.0041 & 0.0011 & -3.81 & 0.0001 & *** \\
+n6867 & Freq & -0.0031 & 0.0022 & -1.44 & 0.1505 &  \\
+n1041 & Mean & -0.0031 & 0.0011 & -2.71 & 0.0067 & *** \\
+n6399 & Freq & 0.0023 & 0.0007 & 3.22 & 0.0013 & *** \\
+n6535 & Freq & -0.0023 & 0.0007 & -3.29 & 0.0010 & *** \\
+n6867 & Mean & -0.0022 & 0.0021 & -1.04 & 0.2996 &  \\
+n4625 & Mean & -0.0018 & 0.0010 & -1.89 & 0.0592 & * \\
+n4330 & Freq & -0.0017 & 0.0007 & -2.60 & 0.0094 & *** \\
+n4670 & Freq & -0.0017 & 0.0007 & -2.60 & 0.0092 & *** \\
+n4550 & Mean & -0.0017 & 0.0007 & -2.51 & 0.0121 & ** \\
+n1823 & Mean & 0.0016 & 0.0010 & 1.64 & 0.1006 &  \\
+n3601 & Freq & 0.0015 & 0.0006 & 2.34 & 0.0192 & ** \\
+n7450 & Mean & 0.0015 & 0.0005 & 3.09 & 0.0020 & *** \\
+n2521 & Mean & -0.0015 & 0.0006 & -2.35 & 0.0187 & ** \\
+n189 & Mean & -0.0013 & 0.0006 & -2.06 & 0.0393 & ** \\
+\hline\hline
+\end{tabular}
+\begin{tablenotes}
+\small
+\item Notes: All features are standardized (mean=0, std=1). *** p<0.01, ** p<0.05, * p<0.10.
+\end{tablenotes}
+\end{table}

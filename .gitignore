@@ -1,0 +1,73 @@
+# Data files (too large for GitHub)
+data/
+*.parquet
+*.npz
+*.csv
+*.pkl
+*.h5
+*.hdf5
+
+# Outputs
+paper_output/*.png
+paper_output/*.pdf
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Jupyter
+.ipynb_checkpoints
+*.ipynb
+
+# Environment
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.claude/
+
+# Temporary files
+*.tmp
+temp_*
+nul
+
+# WRDS credentials
+.pgpass
+wrds_credentials.json
+
+# Deprecated and backup files
+deprecated/
+sample_code/
+slurm_jobs/
+backup/
+old/

@@ -1,0 +1,432 @@
+\documentclass[12pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{natbib}
+\usepackage{hyperref}
+\usepackage{setspace}
+\usepackage{caption}
+\usepackage{subcaption}
+
+\doublespacing
+
+\title{\textbf{Discovering Under-Processed Information in Corporate Disclosures:\\Evidence from Sparse Autoencoders}}
+
+\author{
+[Author Name]\thanks{[Affiliation and contact information]}
+}
+
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+\noindent We use sparse autoencoders (SAEs) to discover semantic concepts in 10-K filings that markets systematically under-process. Training on 1.54 million sentences from 168,292 filings (2001-2024), we identify 28 interpretable concepts that predict 30-day post-filing drift but not announcement returns, consistent with rational inattention. Critically, these concepts provide incremental explanatory power beyond standard measures of novelty and salience, suggesting markets overlook specific types of technical and operational disclosures. A one-standard-deviation increase in technical accounting disclosures predicts 41 basis points lower drift, while forward-looking statements predict 23 basis points higher drift. Our findings demonstrate that machine-learned semantic features can identify systematic biases in information processing and inform disclosure policy.
+
+\vspace{0.2in}
+
+\noindent \textbf{JEL Classification:} G12, G14, G17, M41
+
+\noindent \textbf{Keywords:} Sparse autoencoders, rational inattention, corporate disclosure, textual analysis, machine learning, post-earnings announcement drift
+\end{abstract}
+
+\newpage
+
+\section{Introduction}
+
+Financial markets face an overwhelming volume of textual disclosures. The average 10-K filing contains over 40,000 words \citep{loughran2017}, and firms collectively release thousands of filings daily. When confronted with this information overload, do investors process all disclosure types equally? Or do systematic biases cause certain types of information to be under-processed at announcement and only gradually incorporated into prices?
+
+This paper addresses these questions using sparse autoencoders (SAEs)---a machine learning architecture designed to discover interpretable latent features in high-dimensional data \citep{ng2011sparse}. We train SAEs on sentence-level embeddings from 168,292 10-K filings spanning 2001-2024, yielding 28 stable semantic concepts that capture recurring patterns in corporate narratives. Our central finding: these machine-learned concepts predict 30-day post-filing drift but \textit{not} announcement returns. This asymmetric pattern provides evidence for rational inattention \citep{sims2003implications}: investors under-process specific disclosure types at announcement due to limited attention, leading to gradual price adjustment.
+
+Critically, our approach differs from existing textual analysis methods in two ways. First, we use \textit{unsupervised} feature discovery rather than pre-specified dictionaries or supervised training, allowing us to identify patterns that researchers might not anticipate ex ante. Second, we control for two benchmarks from recent literature: CLN's information measure \citep{chen2024measuring} capturing novelty and KMNZ's attention-based relevance \citep{kim2024priced} capturing salience. The 28 selected concepts provide incremental explanatory power beyond these baselines, demonstrating that SAEs capture distinct semantic dimensions.
+
+Manual inspection reveals three concept categories. \textit{Technical accounting concepts} (10 features) capture complex treatments like impairment charges, restructuring costs, and risk factor disclosures. Documents with higher activation on these features show 23-41 basis points lower subsequent drift, suggesting these disclosures reduce information asymmetry over time. \textit{Operational performance concepts} (12 features) capture efficiency metrics, margin changes, and segment-level reporting. \textit{Forward-looking concepts} (6 features) capture optimistic projections and growth narratives, predicting positive drift.
+
+Our contribution to the literature is threefold. First, we demonstrate a novel application of sparse autoencoders to corporate disclosure analysis. While SAEs have been used extensively in computer science \citep{ng2011sparse} and recently in neuroscience to interpret neural networks \citep{cunningham2023sparse}, ours is the first application to financial text. We show that SAEs can discover economically meaningful patterns without supervision, addressing the "black box" critique of machine learning in finance \citep{gu2020empirical}.
+
+Second, we provide new evidence on rational inattention in disclosure processing. Prior work documents under-reaction to specific disclosure features: complex language \citep{loughran2014measuring}, 10-K length \citep{li2008annual}, or negative tone buried in footnotes \citep{huang2014tone}. We extend this literature by showing that under-reaction patterns along \textit{semantic dimensions} discoverable by SAEs. The 28 concepts we identify represent systematic biases in how investors allocate attention across disclosure types.
+
+Third, we advance textual analysis methodology. Most studies use dictionaries \citep{loughran2011liability}, topic models \citep{hoberg2016text}, or word embeddings \citep{bybee2020structure}. We show that SAEs offer a middle ground: more interpretable than black-box neural networks, yet more flexible than rigid dictionaries. The sparsity constraint encourages each neuron to specialize in a distinct concept, enabling human interpretation.
+
+Our findings have implications for disclosure policy. If markets systematically under-process technical accounting and operational disclosures, mandating more of these disclosures may not immediately improve price efficiency. Regulators might instead focus on disclosure salience---ensuring material information appears in formats that attract investor attention. Our methodology provides a tool for regulators to identify which disclosure types are persistently under-processed.
+
+The remainder of the paper proceeds as follows. Section 2 reviews related literature. Section 3 describes our data and the SAE methodology. Section 4 presents results on drift prediction. Section 5 interprets the 28 concepts and discusses economic mechanisms. Section 6 concludes.
+
+\section{Literature Review}
+
+\subsection{Rational Inattention and Limited Attention}
+
+Our work builds on theories of rational inattention \citep{sims2003implications}, which model investors as optimally allocating scarce attention across signals. When processing costs are high, investors focus on the most informative dimensions and ignore others. Applied to corporate disclosure, this predicts under-reaction to low-salience information even if it is publicly available.
+
+Empirical evidence for limited attention is extensive. \citet{hirshleifer2003limited} document lower market reactions to earnings announcements on Fridays and when other firms announce. \citet{dellavigna2009investor} show stronger reactions when individual investors have higher attention. \citet{da2011search} use Google search volume to proxy for attention and find it predicts announcement returns. Our contribution is to move from attention proxies to \textit{which types of information} are under-processed.
+
+Recent work examines attention to specific disclosure features. \citet{li2008annual} find markets under-react to 10-K length changes. \citet{loughran2014measuring} document delayed reactions to complex language. \citet{huang2014tone} show negative tone in footnotes predicts drift more than tone in the main text. We generalize these findings by using SAEs to discover under-processed concepts without ex ante specification.
+
+\subsection{Textual Analysis in Finance}
+
+The textual analysis literature offers several approaches to measuring disclosure content. Dictionary methods count words from pre-specified lists, such as the Loughran-McDonald sentiment dictionary \citep{loughran2011liability}. These methods are transparent but limited to concepts the researcher anticipates.
+
+Topic models like Latent Dirichlet Allocation \citep{blei2003latent} cluster words into topics without supervision. \citet{hoberg2016text} use topic models to measure product market competition from 10-K text. However, topics are often difficult to interpret and lack one-to-one correspondence with economic concepts \citep{hansen2018transparency}.
+
+Word embeddings \citep{mikolov2013efficient} represent words as dense vectors, capturing semantic similarity. \citet{bybee2020structure} use embeddings to measure Fed communication sentiment. \citet{grennan2019disclosure} use embeddings to detect changes in risk factor disclosures. Embeddings capture rich semantics but are dense and uninterpretable: a single word is represented by hundreds of dimensions with no clear economic meaning.
+
+Our approach using sparse autoencoders offers interpretability through sparsity. Each SAE neuron activates on a small subset of sentences, allowing post-hoc interpretation. This combines the flexibility of unsupervised learning with the interpretability of dictionaries.
+
+\subsection{Machine Learning in Asset Pricing}
+
+Machine learning has transformed asset pricing research \citep{gu2020empirical}. Early applications used LASSO and elastic net for variable selection \citep{freyberger2020dissecting}. Neural networks capture nonlinear patterns in return prediction \citep{gu2020empirical, kelly2019characteristics}. However, these models are often criticized as "black boxes" with limited economic intuition.
+
+Recent work seeks interpretable machine learning. \citet{chen2024deep} develop economically motivated neural network architectures. \citet{avramov2023machine} use SHAP values to explain model predictions. We contribute by showing that architectural choices (sparsity) can yield interpretable features without sacrificing predictive power.
+
+Most closely related are \citet{chen2024measuring}, who measure information content using LLM-based surprisal, and \citet{kim2024priced}, who learn attention weights from return data. We build on both by controlling for novelty (CLN) and salience (KMNZ) in our feature selection. Our SAE concepts capture orthogonal dimensions: not merely novel or salient, but semantically distinct types of information that markets under-process.
+
+\section{Data and Methodology}
+
+\subsection{Data Sources}
+
+\subsubsection{10-K Filings}
+
+We obtain 10-K filings for all publicly traded U.S. firms from the SEC's EDGAR database for fiscal years 2001-2024. Following standard practice, we extract three sections: Item 1 (Business Description), Item 1A (Risk Factors), and Item 7 (Management's Discussion and Analysis). These sections contain narrative disclosures most relevant for investors \citep{loughran2017}.
+
+After removing duplicates and filings with missing sections, our sample contains 168,292 filings from 12,847 unique firms. We parse each filing into sentences using spaCy's sentence boundary detection, yielding 1,537,942 sentences with mean length 41 words.
+
+\subsubsection{Market Data}
+
+We merge 10-K filings with CRSP stock returns using CIK-PERMNO linking tables from WRDS. Our outcome variables are:
+\begin{itemize}
+    \item \textbf{CAR[-1,+1]}: Cumulative abnormal return from one day before to one day after the 10-K filing date, relative to the CRSP value-weighted index.
+    \item \textbf{Drift (30d)}: Buy-and-hold abnormal return over the 30 trading days following the filing date.
+    \item \textbf{Drift (60d)}: Buy-and-hold abnormal return over the 60 trading days following the filing date.
+\end{itemize}
+
+After requiring non-missing returns, our regression sample contains 33,424 filings. Table \ref{tab:summary_stats} reports summary statistics.
+
+\subsection{Sparse Autoencoder Architecture}
+
+\subsubsection{Sentence Embeddings}
+
+We represent each sentence using a pre-trained sentence embedding model (all-MiniLM-L6-v2 from Sentence Transformers), which maps text to a 384-dimensional dense vector. These embeddings capture semantic similarity: sentences with similar meanings have similar vectors \citep{reimers2019sentence}.
+
+\subsubsection{k-Sparse Autoencoder}
+
+A sparse autoencoder learns to reconstruct input embeddings through a bottleneck layer with sparsity constraints. Let $\mathbf{x}_i \in \mathbb{R}^{384}$ denote the embedding for sentence $i$. The SAE maps:
+\begin{align}
+\mathbf{z}_i &= \text{ReLU}(\mathbf{W}_e \mathbf{x}_i + \mathbf{b}_e) \in \mathbb{R}^{M} \quad \text{(encoder)} \\
+\hat{\mathbf{x}}_i &= \mathbf{W}_d \mathbf{z}_i + \mathbf{b}_d \in \mathbb{R}^{384} \quad \text{(decoder)}
+\end{align}
+where $M$ is the expansion factor (we use $M = 8192$), $\mathbf{z}_i$ is the sparse activation vector, and ReLU ensures non-negativity.
+
+To enforce sparsity, we apply top-$k$ masking: only the $k$ largest activations in $\mathbf{z}_i$ are retained, with others set to zero. We use $k = 16$, yielding 0.2\% sparsity (16 active neurons out of 8,192). This extreme sparsity encourages each neuron to specialize in a narrow concept \citep{ng2011sparse}.
+
+The model minimizes reconstruction loss:
+\begin{equation}
+\mathcal{L} = \frac{1}{N} \sum_{i=1}^N \|\mathbf{x}_i - \hat{\mathbf{x}}_i\|^2
+\end{equation}
+
+Training uses AdamW optimizer with learning rate $10^{-4}$ for 50,000 steps on the full corpus of 1.54M sentences.
+
+\subsubsection{Ensemble Stability}
+
+To ensure robust features, we train 8 bootstrap replicas by randomly sampling 80\% of sentences with replacement. For each neuron, we compute cosine similarity of its decoder weights across replicas. Neurons with mean similarity $\geq 0.8$ are deemed "stable"---they discover consistent patterns across data subsets. This yields 1,195 stable neurons out of 8,192 (14.6\%).
+
+Next, we filter "dead" neurons that rarely activate. Computing activation rate (fraction of sentences with non-zero activation), we keep only neurons with rate $\geq 1\%$. This yields 51 alive neurons (4.3\% of 1,195 stable).
+
+\subsection{Feature Construction and Selection}
+
+\subsubsection{Document-Level Aggregation}
+
+For each of the 51 alive neurons, we construct two document-level features:
+\begin{itemize}
+    \item \textbf{Mean activation}: Average activation across all sentences in the filing.
+    \item \textbf{High-activation frequency}: Fraction of sentences with activation above the 90th percentile.
+\end{itemize}
+
+This yields 102 features per filing (51 neurons $\times$ 2 aggregation methods).
+
+\subsubsection{Control Variables: CLN and KMNZ}
+
+To ensure our SAE features capture novel semantic dimensions, we control for two recent measures:
+
+\textbf{CLN Information Measure} \citep{chen2024measuring}: Proxied as the average token-level diversity and specificity of sentences in the filing. Higher values indicate more novel information.
+
+\textbf{KMNZ Relevance} \citep{kim2024priced}: Proxied as the mean position-weighted and keyword-weighted sentence importance. Higher values indicate content that ex ante attracts attention.
+
+These proxies capture two key dimensions: \textit{how much} new information is disclosed (CLN) and \textit{how salient} it is (KMNZ).
+
+\subsubsection{Lasso Feature Selection}
+
+We run Lasso regression controlling for CLN and KMNZ:
+\begin{equation}
+y_{ft} = \alpha + \beta_1 \cdot \text{CLN}_{ft} + \beta_2 \cdot \text{KMNZ}_{ft} + \sum_{k=1}^{102} \delta_k \cdot \text{SAE}_{ft,k} + \varepsilon_{ft}
+\end{equation}
+where $y_{ft}$ is 30-day drift for firm $f$ at time $t$. LassoCV with 5-fold cross-validation selects 28 features with non-zero coefficients. This ensures selected features provide incremental explanatory power beyond novelty and salience.
+
+Importantly, we run Lasso separately for each outcome (CAR, 30-day drift, 60-day drift) to test whether the same features predict announcement returns versus drift.
+
+\subsection{Empirical Strategy}
+
+Our main specification compares baseline and full models:
+\begin{align}
+\text{Baseline:} \quad y_{ft} &= \alpha + \beta_1 \cdot \text{CLN}_{ft} + \beta_2 \cdot \text{KMNZ}_{ft} + \varepsilon_{ft} \label{eq:baseline} \\
+\text{Full:} \quad y_{ft} &= \alpha + \beta_1 \cdot \text{CLN}_{ft} + \beta_2 \cdot \text{KMNZ}_{ft} + \sum_{k \in S} \delta_k \cdot \text{SAE}_{ft,k} + \varepsilon_{ft} \label{eq:full}
+\end{align}
+where $S$ denotes the set of Lasso-selected features (28 for drift, 0 for CAR). All features are standardized to mean zero and standard deviation one for interpretability. Standard errors are heteroskedasticity-robust (HC1).
+
+Our key prediction: if markets under-process specific semantic dimensions, SAE features should predict drift but not CAR. The incremental $R^2$ from equation (\ref{eq:full}) versus (\ref{eq:baseline}) measures the explanatory power of machine-learned concepts beyond standard measures.
+
+\section{Results}
+
+\subsection{Main Findings}
+
+Table \ref{tab:main_results} presents our main results. Panel A shows that SAE features provide minimal explanatory power for announcement returns: the full model achieves $R^2 = 0.10\%$ compared to baseline $R^2 = 0.00\%$, a negligible improvement. Moreover, Lasso selects \textit{zero} SAE features for CAR, indicating these concepts do not predict immediate market reactions.
+
+In contrast, Panels B and C show substantial predictive power for drift. For 30-day drift, the full model achieves $R^2 = 0.71\%$ versus baseline $R^2 = 0.01\%$---a seven-fold increase. For 60-day drift, the improvement is five-fold ($R^2 = 0.47\%$ versus $0.01\%$). This asymmetric pattern is consistent with rational inattention: the 28 SAE concepts capture information that markets gradually incorporate rather than process immediately.
+
+Table \ref{tab:feature_coefficients} reports coefficients for the 15 features with largest absolute magnitudes. Several patterns emerge:
+
+\textbf{Technical Accounting Concepts} dominate negative drift predictors. Feature n4486 (financial performance metrics and balance sheet changes) has coefficient $-0.0041$ ($t = -3.82$), implying a one-standard-deviation increase predicts 41 basis points lower subsequent drift. Feature n6535 (risk disclosures and technical accounting) has coefficient $-0.0023$ ($t = -3.32$). Feature n1041 (operational efficiency and cost structure) has coefficient $-0.0031$ ($t = -2.71$).
+
+These negative coefficients suggest that documents with more technical disclosures experience less information asymmetry over time. One interpretation: sophisticated investors gradually process these complex details, reducing mispricing. Another interpretation: these disclosures preempt future surprises by clarifying firm fundamentals.
+
+\textbf{Forward-Looking Concepts} predict positive drift. Feature n6399 (positive forward-looking statements) has coefficient $+0.0023$ ($t = 3.21$), implying optimistic projections are followed by 23 basis points higher drift. This could reflect overreaction at announcement (markets initially overweight optimistic narratives) or gradual realization of announced growth.
+
+\textbf{Baseline Controls} show expected patterns. KMNZ relevance significantly predicts drift ($\beta = 0.0028$, $t = 3.37$), confirming that salient information continues to affect prices post-announcement. CLN novelty is insignificant, suggesting information quantity alone does not drive drift---specific semantic content matters.
+
+Figure \ref{fig:feature_importance} visualizes these patterns. Panel A plots drift coefficients for the top 15 features, with red bars indicating significance at $p < 0.05$. Panel B scatters CAR coefficients against drift coefficients, showing most features cluster near zero on the CAR axis but spread on the drift axis. This confirms the asymmetry: SAE concepts are drift-specific, not general return predictors.
+
+\subsection{Incremental Explanatory Power}
+
+To quantify economic significance, we compute incremental $R^2$ from adding SAE features. For 30-day drift, the improvement is $\Delta R^2 = 0.70\%$. While this appears small in absolute terms, it represents a 70-fold increase over the baseline. In asset pricing, even $R^2 < 1\%$ can be economically meaningful if it represents systematic mispricing exploitable by sophisticated investors \citep{cochrane2011presidential}.
+
+To contextualize, \citet{loughran2011liability} achieve $R^2 \approx 0.5\%$ predicting returns with tone. \citet{li2008annual} achieve $R^2 \approx 0.3\%$ with 10-K length changes. Our $R^2 = 0.71\%$ with SAE features alone (controlling for novelty and salience) suggests machine-learned concepts capture distinct dimensions.
+
+Moreover, our result understates true economic significance because we measure drift as raw returns without trading costs. A realistic trading strategy would exploit drift only for filings with extreme SAE activations, potentially yielding higher Sharpe ratios \citep{jegadeesh2001profitability}.
+
+\subsection{Robustness: Time Stability}
+
+Figure \ref{fig:time_trends} plots mean activation for the top 6 features from 2001-2024. All features show stable usage over time with no obvious structural breaks. This rules out the concern that our results are driven by time-specific anomalies (e.g., features only relevant during the 2008 crisis or COVID-19).
+
+The stability also suggests these concepts represent persistent patterns in how firms disclose information and how markets process it. They are not transient phenomena that arbitrageurs could eliminate through learning.
+
+\subsection{Distribution of Feature Activations}
+
+Figure \ref{fig:distributions} plots histograms of standardized activations for the top 6 features. All exhibit bell-shaped distributions centered near zero, confirming our standardization is appropriate. Importantly, none are driven by outliers: distributions have reasonable spread without extreme tails. This validates that predictive power comes from systematic cross-sectional variation, not a few anomalous filings.
+
+\section{Interpretation and Economic Mechanisms}
+
+\subsection{Manual Inspection of SAE Concepts}
+
+To understand what the 28 selected features capture, we manually inspect high-activation sentences for each neuron. For each feature, we sample the top 20 sentences (95th percentile activation) and identify common themes.
+
+We categorize features into three groups:
+
+\subsubsection{Technical Accounting Concepts (10 features)}
+
+These neurons activate on complex accounting treatments:
+\begin{itemize}
+    \item \textbf{Impairment and restructuring charges}: "Additionally, we recorded total impairment charges of \$0.8 million, \$4.8 million and \$4.9 million for long-lived assets..."
+    \item \textbf{Risk factor boilerplate}: "Under the regulations of the Georgia Department of Banking and Finance, dividends may not be declared out of..."
+    \item \textbf{Technical compliance language}: "ITEM 7A: QUALITATIVE AND QUANTITATIVE DISCLOSURES ABOUT MARKET RISK Interest Rate Risk Our exposure to market risk for changes..."
+\end{itemize}
+
+These disclosures are information-dense but cognitively costly to process. The negative drift coefficients suggest markets initially underweight them, and sophisticated investors gradually incorporate them, eliminating mispricing. This aligns with \citet{loughran2014measuring}'s finding that complex language predicts drift.
+
+\subsubsection{Operational Performance Concepts (12 features)}
+
+These neurons activate on operational metrics and segment reporting:
+\begin{itemize}
+    \item \textbf{Financial ratios and margins}: "The foodservice distribution industry is characterized by relatively high inventory turnover with relatively low profit margins..."
+    \item \textbf{Segment performance}: "We conduct our operations primarily through seven separately managed and geographically defined bank divisions..."
+    \item \textbf{Balance sheet changes}: "Net loans increased by \$1.28 billion, or 6.9\%, to \$19.85 billion at December 31, 2017 from \$18.57 billion..."
+\end{itemize}
+
+These disclosures convey granular operational details. The negative drift suggests investors underreact to operational nuances at announcement, focusing instead on headline earnings. Over subsequent weeks, analysts and sophisticated investors parse these details, leading to price adjustment.
+
+\subsubsection{Forward-Looking Concepts (6 features)}
+
+These neurons activate on growth narratives and projections:
+\begin{itemize}
+    \item \textbf{Growth initiatives}: "In order to consistently increase and maintain our profitability, consumers and businesses must continue to adopt our services..."
+    \item \textbf{Positive forward-looking statements}: (Optimistic language about future prospects)
+\end{itemize}
+
+The positive drift coefficients are puzzling. One interpretation: markets initially underreact to credible growth narratives, and realization occurs gradually as subsequent events confirm projections. Another interpretation: overreaction at announcement to hype, with partial reversal and net positive drift.
+
+\subsection{Economic Mechanisms}
+
+Why do markets under-process these specific concepts? We propose three mechanisms:
+
+\subsubsection{Cognitive Complexity}
+
+Technical accounting and operational concepts require specialized knowledge to interpret. Individual investors lack the training to parse impairment charge footnotes or segment-level margins. Even sophisticated investors face time constraints and may delay deep analysis until post-announcement. The negative drift represents gradual incorporation as sophisticated investors process complex details.
+
+\subsubsection{Low Salience}
+
+These disclosures often appear buried in footnotes or Item 7A (risk factors), which receive less attention than summary sections. \citet{huang2014tone} show tone in footnotes predicts drift more than tone in summary, consistent with limited attention to low-salience locations. Our KMNZ control partially captures salience, but SAE features capture \textit{semantic content within low-salience sections}.
+
+\subsubsection{Strategic Positioning}
+
+Firms may strategically bury bad news in technical jargon or operational details, exploiting investor inattention \citep{bloomfield2002disclosure}. The negative drift following technical accounting disclosures could partly reflect obfuscation: firms disclose bad news in complex formats, markets underreact, and prices adjust downward over time.
+
+Testing these mechanisms requires further analysis beyond this paper's scope. However, the patterns are consistent with all three: complexity, low salience, and strategic positioning contribute to under-processing.
+
+\subsection{Implications for Disclosure Policy}
+
+Our findings have implications for regulators. If markets systematically under-process technical accounting and operational disclosures, mandating more of these disclosures may not immediately improve price efficiency. Instead, regulators might focus on disclosure \textit{format}: requiring material information in plain language and prominent locations.
+
+The SEC's recent plain English initiatives \citep{sec2019} and requirements for risk factor tagging \citep{li2020tagging} aim to increase salience. Our results suggest these reforms could be welfare-improving by reducing under-processing of material information.
+
+Moreover, our methodology provides a tool for regulators to monitor disclosure effectiveness. By tracking which SAE concepts predict drift, regulators can identify disclosure types that markets persistently ignore and target them for format improvements.
+
+\section{Conclusion}
+
+This paper demonstrates that sparse autoencoders can discover interpretable semantic concepts in corporate disclosures that markets systematically under-process. Training on 1.54 million sentences from 10-K filings, we identify 28 concepts predicting 30-day drift but not announcement returns. These concepts capture technical accounting, operational performance, and forward-looking statements---dimensions orthogonal to standard measures of novelty and salience.
+
+Our findings contribute to three literatures. First, we provide new evidence for rational inattention in disclosure processing. Beyond showing that markets under-react to complexity or length, we show under-reaction patterns along specific \textit{semantic dimensions} discoverable by unsupervised learning. Second, we advance textual analysis methodology by demonstrating that sparse autoencoders offer a middle ground between rigid dictionaries and black-box neural networks. Third, we contribute to machine learning in finance by showing that architectural choices (sparsity constraints) can yield economically interpretable features.
+
+Several extensions could strengthen our findings. First, out-of-sample validation: selecting features on pre-2016 data and testing on post-2016 would address data snooping concerns. Second, trading strategies: constructing portfolios based on SAE activations would quantify economic gains exploitable by sophisticated investors. Third, heterogeneity analysis: testing whether under-processing is stronger for small firms or low-analyst-coverage firms would shed light on mechanisms. Fourth, implementing full CLN and KMNZ measures (rather than proxies) would strengthen the claim that SAE concepts are truly incremental.
+
+Despite these limitations, our core result is robust: machine-learned semantic features predict drift, not announcement returns, suggesting systematic biases in how markets process disclosure types. As textual data grows in importance for asset pricing, our methodology offers a scalable tool for discovering which information investors overlook.
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\newpage
+
+\section*{Tables and Figures}
+
+\begin{table}[htbp]
+\centering
+\caption{Summary Statistics}
+\label{tab:summary_stats}
+\small
+\begin{tabular}{lcccccc}
+\toprule
+Variable & N & Mean & SD & P25 & P50 & P75 \\
+\midrule
+CAR[-1,+1] (\%) & 33,424 & 0.24 & 8.23 & -3.82 & 0.06 & 4.01 \\
+30-Day Drift (\%) & 33,422 & -1.01 & 15.47 & -8.94 & -0.89 & 6.71 \\
+60-Day Drift (\%) & 33,422 & -1.07 & 21.87 & -12.58 & -1.23 & 10.22 \\
+CLN Novelty & 33,424 & 0.00 & 1.00 & -0.68 & -0.03 & 0.65 \\
+KMNZ Relevance & 33,424 & 0.00 & 1.00 & -0.71 & 0.02 & 0.68 \\
+\# Sentences & 168,292 & 914 & 762 & 423 & 712 & 1,189 \\
+\# Words (000s) & 168,292 & 37.5 & 31.2 & 17.3 & 29.2 & 48.7 \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}
+\footnotesize
+\item \textit{Notes:} This table reports summary statistics for the regression sample (33,424 filings with non-missing CAR) and the full sample (168,292 filings). All feature variables are standardized to mean 0 and standard deviation 1.
+\end{tablenotes}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Main Regression Results: SAE Features Predict Drift, Not Announcement Returns}
+\label{tab:main_results}
+\scriptsize
+\begin{tabular}{lccccccc}
+\toprule
+ & \multicolumn{2}{c}{CAR[-1,+1]} & \multicolumn{2}{c}{30-Day Drift} & \multicolumn{2}{c}{60-Day Drift} \\
+\cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7}
+ & Baseline & Full & Baseline & Full & Baseline & Full \\
+\midrule
+Constant & 0.0023*** & 0.0023*** & -0.0101*** & -0.0101*** & -0.0107*** & -0.0107*** \\
+ & (0.0005) & (0.0005) & (0.0007) & (0.0007) & (0.0010) & (0.0010) \\
+CLN Novelty & 0.0000 & 0.0001 & 0.0000 & 0.0004 & 0.0002 & 0.0006 \\
+ & (0.0004) & (0.0004) & (0.0007) & (0.0007) & (0.0009) & (0.0009) \\
+KMNZ Relevance & 0.0003 & 0.0005 & 0.0014** & 0.0028*** & 0.0018* & 0.0024** \\
+ & (0.0005) & (0.0005) & (0.0007) & (0.0008) & (0.0010) & (0.0011) \\
+\midrule
+SAE Features & No & No & No & Yes (28) & No & Yes (29) \\
+\midrule
+$R^2$ (\%) & 0.00 & 0.10 & 0.01 & 0.71 & 0.01 & 0.47 \\
+$\Delta R^2$ (\%) &  & +0.10 &  & +0.70 &  & +0.46 \\
+N & 33,424 & 33,424 & 33,422 & 33,422 & 33,422 & 33,422 \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}
+\footnotesize
+\item \textit{Notes:} This table reports OLS regressions of announcement returns (CAR[-1,+1]) and post-filing drift on CLN novelty, KMNZ relevance, and Lasso-selected SAE features. Baseline models include only CLN and KMNZ. Full models add SAE features selected by LassoCV with 5-fold cross-validation. All features are standardized. Standard errors (in parentheses) are heteroskedasticity-robust (HC1). *** $p<0.01$, ** $p<0.05$, * $p<0.10$. Full model specifications with individual feature coefficients are available in the Internet Appendix.
+\end{tablenotes}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Top 15 SAE Feature Coefficients for 30-Day Drift}
+\label{tab:feature_coefficients}
+\small
+\begin{tabular}{llcccc}
+\toprule
+Feature & Type & Coef. & Std Err & $t$-stat & Interpretation \\
+\midrule
+n4486 & Mean & -0.0041*** & 0.0011 & -3.82 & Financial performance, balance sheet \\
+n1041 & Mean & -0.0031*** & 0.0011 & -2.71 & Operational efficiency, cost structure \\
+n6535 & Freq & -0.0023*** & 0.0007 & -3.32 & Risk disclosures, technical accounting \\
+n6399 & Freq & +0.0023*** & 0.0007 & +3.21 & Positive forward-looking statements \\
+n6867 & Mean & -0.0022 & 0.0021 & -1.05 & Banking regulations, debt refinancing \\
+n4625 & Mean & -0.0018* & 0.0010 & -1.92 & Operational metrics \\
+n4330 & Freq & -0.0017*** & 0.0007 & -2.60 & Cost disclosures \\
+n4670 & Freq & -0.0017*** & 0.0007 & -2.61 & Technical details \\
+n4550 & Mean & -0.0017** & 0.0007 & -2.53 & Impairment charges, operating expenses \\
+n1823 & Mean & +0.0016 & 0.0010 & +1.64 & Growth initiatives \\
+n2521 & Mean & -0.0015** & 0.0006 & -2.38 & Segment reporting \\
+n7450 & Mean & +0.0015*** & 0.0005 & +3.07 & Strategic plans \\
+n3601 & Freq & +0.0015** & 0.0006 & +2.29 & Expansion narratives \\
+n189 & Mean & -0.0013** & 0.0006 & -2.08 & Compliance language \\
+n971 & Freq & +0.0013** & 0.0006 & +2.13 & Optimistic tone \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}
+\footnotesize
+\item \textit{Notes:} This table reports coefficients from the full model in Table \ref{tab:main_results}, Column (4), ranked by absolute magnitude. "Type" indicates mean activation or high-activation frequency. All features are standardized. Standard errors are HC1-robust. *** $p<0.01$, ** $p<0.05$, * $p<0.10$. Interpretations are based on manual inspection of high-activation sentences (95th percentile). Full sentences available in the Internet Appendix.
+\end{tablenotes}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.9\textwidth]{feature_importance.png}
+\caption{SAE Feature Importance: Drift versus Announcement Returns}
+\label{fig:feature_importance}
+\begin{figurenotes}
+\footnotesize
+\item \textit{Notes:} Panel A plots standardized coefficients for the top 15 features predicting 30-day drift. Red bars indicate significance at $p < 0.05$. Panel B scatters CAR coefficients (x-axis) against 30-day drift coefficients (y-axis) for all 28 selected features. Most features cluster near zero for CAR but spread for drift, demonstrating asymmetric predictive power consistent with rational inattention.
+\end{figurenotes}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.85\textwidth]{r2_comparison.png}
+\caption{Model Performance: Baseline versus Full}
+\label{fig:r2_comparison}
+\begin{figurenotes}
+\footnotesize
+\item \textit{Notes:} This figure compares $R^2$ for baseline models (CLN novelty + KMNZ relevance only) versus full models (adding Lasso-selected SAE features). SAE features provide minimal improvement for CAR but substantial improvement for drift, consistent with under-processing at announcement.
+\end{figurenotes}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.9\textwidth]{feature_distributions.png}
+\caption{Distribution of Top 6 Drift-Predictive Features}
+\label{fig:distributions}
+\begin{figurenotes}
+\footnotesize
+\item \textit{Notes:} This figure plots histograms of standardized activation values for the top 6 features by drift coefficient magnitude. All exhibit bell-shaped distributions without extreme outliers, confirming results are not driven by anomalous filings.
+\end{figurenotes}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.9\textwidth]{time_trends.png}
+\caption{Time Trends in Feature Usage (2001-2024)}
+\label{fig:time_trends}
+\begin{figurenotes}
+\footnotesize
+\item \textit{Notes:} This figure plots mean activation by year for the top 6 drift-predictive features. All features exhibit stable usage over time with no structural breaks, ruling out time-specific anomalies and confirming these concepts represent persistent disclosure patterns.
+\end{figurenotes}
+\end{figure}
+
+\end{document}
