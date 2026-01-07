@@ -39,10 +39,10 @@ Instead of hand-crafting textual features, I let a sparse autoencoder **discover
 - **8 survive FDR** (q < 0.05, Benjamini-Hochberg)
 
 ### Top Drift-Predictive Concepts (FDR-Corrected)
-1. **Financial performance metrics** → -0.41% drift (p_FDR = 0.004) ***
-2. **Operational efficiency disclosures** → -0.31% drift (p_FDR = 0.040) **
-3. **Risk factor details** → -0.23% drift (p_FDR = 0.013) **
-4. **Optimistic forward-looking statements** → +0.23% drift (p_FDR = 0.013) **
+1. **Financial performance metrics** → -0.41% drift (p_FDR = 0.004) 
+2. **Operational efficiency disclosures** → -0.31% drift (p_FDR = 0.040)
+3. **Risk factor details** → -0.23% drift (p_FDR = 0.013)
+4. **Optimistic forward-looking statements** → +0.23% drift (p_FDR = 0.013)
 
 These features predict drift **but not announcement returns** (CAR R² = 0.11%), consistent with limited attention.
 
@@ -233,8 +233,5 @@ This is a research project, but suggestions welcome! Areas for improvement:
 MIT License - See [LICENSE](LICENSE) file for details.
 
 ---
-
-**Status**: ✅ Phase 1 complete (out-of-sample validation, FDR correction, control variables)
-**Next**: Phase 2 (industry/year fixed effects, Fama-French factors, proxy validation)
 
 *"What if I actually tried this?"* → Built it, debugged it, validated it. 🚀
